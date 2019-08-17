@@ -213,17 +213,54 @@ namespace RpcEditor
         private void Connect_Clicked()
         {
             if (_appId_Errored) return;
+
+            UpdateLabel(_state, "Connecting...");
+
+            if (_client != null)
+            {
+                _client.OnReady -= Client_OnReady;
+                _client.OnConnectionFailed -= Client_OnConnectionFailed;
+                _client.OnConnectionEstablished -= Client_OnConnectionEstablished;
+                _client.OnError -= Client_OnError;
+                _client.OnClose -= Client_OnClose;
+                _client.OnPresenceUpdate -= Client_OnPresenceUpdate;
+                _client = null;
+            }
+
             _client = new DiscordRpcClient(_appId.ToString());
             _client.Initialize();
 
             _client.OnReady += Client_OnReady;
+            _client.OnConnectionFailed += Client_OnConnectionFailed;
+            _client.OnConnectionEstablished += Client_OnConnectionEstablished;
+            _client.OnError += Client_OnError;
+            _client.OnClose += Client_OnClose;
             _client.OnPresenceUpdate += Client_OnPresenceUpdate;
+        }
+
+        private void Client_OnClose(object sender, DiscordRPC.Message.CloseMessage args)
+        {
+            UpdateLabel(_state, $"Connection closed: {args.Code} {args.Reason}");
+        }
+
+        private void Client_OnError(object sender, DiscordRPC.Message.ErrorMessage args)
+        {
+            UpdateLabel(_state, $"Error: {args.Code} {args.Message}");
+        }
+
+        private void Client_OnConnectionEstablished(object sender, DiscordRPC.Message.ConnectionEstablishedMessage args)
+        {
+            UpdateLabel(_state, "Established connection...");
+        }
+
+        private void Client_OnConnectionFailed(object sender, DiscordRPC.Message.ConnectionFailedMessage args)
+        {
+            UpdateLabel(_state, $"Failed to connect to pipe {args.FailedPipe}.");
         }
 
         private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
-            _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "No presence set.";
-            Application.Refresh();
+            UpdateLabel(_currentPresence_Name, _client.CurrentPresence?.Details ?? "No presence set.");
         }
 
         private readonly View _editPresenceView;
@@ -241,8 +278,7 @@ namespace RpcEditor
 
         private void Client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
-            _state.Text = $"Ready. Connected as {args.User}.";
-            Application.Refresh();
+            UpdateLabel(_state, $"Ready. Connected as {args.User}.");
         }
 
         private void UpdatePresence_Clicked()
@@ -267,6 +303,13 @@ namespace RpcEditor
         private void ClearPresence_Clicked()
         {
             _client.ClearPresence();
+        }
+
+        private void UpdateLabel(Label label, string newText)
+        {
+            label.Clear();
+            label.Text = newText;
+            Application.Refresh();
         }
     }
 }
