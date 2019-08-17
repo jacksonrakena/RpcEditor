@@ -2,7 +2,7 @@
 An open-source, multiplatform Discord RPC editor. Runs on .NET Core 3.0.
 
 ### Example
-![example](https://jessica.is-pretty.cool/9kz4bcf.png)
+![example](https://jessica.is-pretty.cool/9YGpjST.png)
 Looks like:  
 ![preview](https://jessica.is-pretty.cool/3GdTAHh.png)
 ### Acknowledgements
