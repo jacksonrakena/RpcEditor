@@ -12,6 +12,8 @@ namespace RpcEditor
         private readonly Label _copyright = new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor");
 
         private readonly Window _window;
+        private readonly View _viewWindow;
+        private readonly View _stateWindow;
 
         private readonly Label _applicationId;
         private readonly TextField _applicationId_Input;
@@ -30,8 +32,8 @@ namespace RpcEditor
             Application.Init();
             _applicationId = new Label("Discord application ID: ")
             {
-                X = 3,
-                Y = 2
+                X = 0,
+                Y = 0
             };
 
             _applicationId_Input = new TextField("")
@@ -62,7 +64,7 @@ namespace RpcEditor
 
             _connect = new Button("Connect")
             {
-                X = 3,
+                X = 0,
                 Y = Pos.Bottom(_applicationId),
 
                 Width = 10
@@ -71,20 +73,37 @@ namespace RpcEditor
 
             _state = new Label("Not connected")
             {
-                X = 3,
-                Y = Pos.Bottom(_connect) + 4
+                X = 3
             };
 
-            _currentPresence_Name = new Label("")
-            {
-                X = 3,
-                Y = Pos.Bottom(_state) + 4
-            };
-
-            _editWindow = new Window("Edit Presence")
+            _currentPresence_Name = new Label("No presence set.")
             {
                 X = 0,
-                Y = Pos.Bottom(_currentPresence_Name)
+                Y = 0
+            };
+
+            _stateWindow = new FrameView("State")
+            {
+                X = 0,
+                Y = Pos.Bottom(_connect) + 4,
+                Height = 10
+            };
+            _stateWindow.Add(_state);
+
+            _editWindow = new FrameView("Edit Presence")
+            {
+                X = 0,
+                Y = Pos.Bottom(_stateWindow),
+                Width = 50,
+                Height = Dim.Fill()
+            };
+
+            _viewWindow = new FrameView("Current Presence")
+            {
+                X = Pos.Right(_editWindow),
+                Y = Pos.Bottom(_stateWindow),
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
             };
             _enterPresenceName_Input = new TextField("")
             {
@@ -116,7 +135,7 @@ namespace RpcEditor
             {
                 X = Pos.Right(_enterPresenceLargeKey),
                 Y = Pos.Bottom(_enterPresenceState),
-                Width = 30
+                Width = 10
             };
 
             _sendPresence = new Button("Update")
@@ -136,6 +155,8 @@ namespace RpcEditor
             _clearPresence.Clicked += ClearPresence_Clicked;
 
             _editWindow.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _enterPresenceLargeKey, _enterPresenceLargeKey_Input, _sendPresence, _clearPresence);
+
+            _viewWindow.Add(_currentPresence_Name);
         }
 
         public void Run()
@@ -144,8 +165,7 @@ namespace RpcEditor
             top.Add(_copyright);
             top.Add(_window);
             
-            _window.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect,
-                _state, _currentPresence_Name, _editWindow);
+            _window.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect, _editWindow, _viewWindow, _stateWindow);
 
             Application.Run();
         }
@@ -177,10 +197,11 @@ namespace RpcEditor
 
         private void _client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
-            _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "None";
+            _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "No presence set.";
+            Application.Refresh();
         }
 
-        private Window _editWindow;
+        private View _editWindow;
         private Label _enterPresenceName = new Label("Name: ");
         private TextField _enterPresenceName_Input;
 
@@ -196,6 +217,7 @@ namespace RpcEditor
         private void _client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
             _state.Text = $"Ready. Connected as {args.User} with RPC version {args.Version}.";
+            Application.Refresh();
         }
 
         private void UpdatePresence_Clicked()
