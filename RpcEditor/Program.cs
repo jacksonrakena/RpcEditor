@@ -255,7 +255,7 @@ namespace RpcEditor
 
         private void Client_OnConnectionFailed(object sender, DiscordRPC.Message.ConnectionFailedMessage args)
         {
-            UpdateLabel(_state, $"Failed to connect to pipe {args.FailedPipe}.");
+            UpdateLabel(_state, $"Failed to connect to pipe {args.FailedPipe}. Is Discord open?");
         }
 
         private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
