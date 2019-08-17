@@ -1,36 +1,44 @@
 ﻿using DiscordRPC;
 using System;
-using System.Diagnostics;
 using Terminal.Gui;
 
 namespace RpcEditor
 {
     public class Program
     {
+        // Discord
         private DiscordRpcClient _client;
 
-        private readonly Label _copyright;
-
+        // Views
         private readonly View _mainView;
         private readonly View _currentPresenceView;
         private readonly View _currentStateView;
-        private readonly View _authView;
+        private readonly View _connectionView;
+        private readonly View _editPresenceView;
 
-        private readonly Label _applicationId;
-        private readonly TextField _applicationId_Input;
-        private readonly Label _applicationId_Error;
-        private bool _appId_Errored = false;
+        // Main view components
+        private readonly Label _copyright;
 
+        // Connection view
+        private readonly TextField _conn_ApplicationId;
+        private readonly Label _conn_ApplicationId_ErrorText;
+        private bool _conn_ApplicationId_Errored;
+        private readonly Button _conn_Connect;
+
+        // State view
         private readonly Label _state;
+
+        // Current presence view
         private readonly Label _currentPresence_Name;
         private readonly Label _currentPresence_State;
         private readonly Label _currentPresence_ArtworkLarge;
         private readonly Label _currentPresence_ArtworkSmall;
         private readonly Label _currentPresence_Timestamps;
 
-        private readonly Button _connect;
-
-        private ulong _appId;
+        // Edit presence view
+        private readonly TextField _editPresence_Name;
+        private readonly TextField _editPresence_State;
+        private readonly TextField _editPresence_ArtworkLarge;
 
         public Program()
         {
@@ -42,7 +50,7 @@ namespace RpcEditor
                 TextColor = Terminal.Gui.Attribute.Make(Color.BrighCyan, Color.Black)
             };
 
-            // main view
+            #region Main view
 
             _mainView = new FrameView("Discord Rich Presence Editor")
             {
@@ -53,53 +61,51 @@ namespace RpcEditor
                 Height = Dim.Fill()
             };
 
-            // authentication window
+            #endregion
 
-            _authView = new FrameView("Connection")
+            #region Connection view
+
+            _connectionView = new FrameView("Connection")
             {
                 Height = 5
             };
 
-            _applicationId = new Label("Discord application ID: ")
-            {
-                X = 0,
-                Y = 0
-            };
+            var idLabel = new Label("Discord application ID: ");
 
-            _applicationId_Input = new TextField("")
+            _conn_ApplicationId = new TextField("")
             {
-                X = Pos.Right(_applicationId),
-                Y = Pos.Top(_applicationId),
+                X = Pos.Right(idLabel),
                 Width = 40
             };
 
-            _applicationId_Input.Changed += ApplicationIdInput_Changed;
+            _conn_ApplicationId.Changed += ApplicationIdInput_Changed;
 
-            _applicationId_Error = new Label("Invalid application ID")
+            _conn_ApplicationId_ErrorText = new Label("Invalid application ID")
             {
-                X = Pos.Right(_applicationId_Input),
-                Y = Pos.Top(_applicationId_Input),
+                X = Pos.Right(_conn_ApplicationId),
+                Y = Pos.Top(_conn_ApplicationId),
                 Width = 25,
                 TextColor = Terminal.Gui.Attribute.Make(Color.Red, Color.Black)
             };
 
-            _connect = new Button("Connect")
+            _conn_Connect = new Button("Connect")
             {
                 X = 0,
-                Y = Pos.Bottom(_applicationId),
+                Y = Pos.Bottom(idLabel),
 
                 Width = 10
             };
-            _connect.Clicked += Connect_Clicked;
+            _conn_Connect.Clicked += Connect_Clicked;
 
-            _authView.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect);
+            _connectionView.Add(idLabel, _conn_ApplicationId, _conn_ApplicationId_ErrorText, _conn_Connect);
 
-            // state window
+            #endregion
+            #region State view
 
             _currentStateView = new FrameView("State")
             {
                 X = 0,
-                Y = Pos.Bottom(_authView),
+                Y = Pos.Bottom(_connectionView),
                 Height = 4
             };
 
@@ -110,7 +116,8 @@ namespace RpcEditor
 
             _currentStateView.Add(_state);
 
-            // edit presence window
+            #endregion
+            #region Edit presence view
 
             _editPresenceView = new FrameView("Edit Presence")
             {
@@ -120,60 +127,61 @@ namespace RpcEditor
                 Height = Dim.Fill()
             };
 
-            _enterPresenceName = new Label("Name: ");
+            var editPresenceNameLabel = new Label("Name: ");
 
-            _enterPresenceName_Input = new TextField("")
+            _editPresence_Name = new TextField("")
             {
-                X = Pos.Right(_enterPresenceName),
+                X = Pos.Right(editPresenceNameLabel),
                 Y = 0,
                 Width = 30
             };
 
-            _enterPresenceState = new Label("State: ")
+            var editPresenceStateLabel = new Label("State: ")
             {
                 X = 0,
-                Y = Pos.Bottom(_enterPresenceName)
+                Y = Pos.Bottom(editPresenceNameLabel)
             };
 
-            _enterPresenceState_Input = new TextField("")
+            _editPresence_State = new TextField("")
             {
-                X = Pos.Right(_enterPresenceState),
-                Y = Pos.Bottom(_enterPresenceName),
+                X = Pos.Right(editPresenceStateLabel),
+                Y = Pos.Bottom(editPresenceNameLabel),
                 Width = 30
             };
 
-            _enterPresenceLargeKey = new Label("Artwork large key: ")
+            var editPresenceLargeKey = new Label("Artwork large key: ")
             {
                 X = 0,
-                Y = Pos.Bottom(_enterPresenceState)
+                Y = Pos.Bottom(editPresenceStateLabel)
             };
 
-            _enterPresenceLargeKey_Input = new TextField("")
+            _editPresence_ArtworkLarge = new TextField("")
             {
-                X = Pos.Right(_enterPresenceLargeKey),
-                Y = Pos.Bottom(_enterPresenceState),
+                X = Pos.Right(editPresenceLargeKey),
+                Y = Pos.Bottom(editPresenceStateLabel),
                 Width = 10
             };
 
-            _sendPresence = new Button("Update")
+            var updatePresence = new Button("Update")
             {
                 X = 0,
-                Y = Pos.Bottom(_enterPresenceLargeKey)
+                Y = Pos.Bottom(editPresenceLargeKey)
             };
 
-            _clearPresence = new Button("Clear")
+            var clearPresence = new Button("Clear")
             {
-                X = Pos.Right(_sendPresence),
-                Y = Pos.Bottom(_enterPresenceLargeKey)
+                X = Pos.Right(updatePresence),
+                Y = Pos.Bottom(editPresenceLargeKey)
             };
 
-            _sendPresence.Clicked += UpdatePresence_Clicked;
+            updatePresence.Clicked += UpdatePresence_Clicked;
 
-            _clearPresence.Clicked += ClearPresence_Clicked;
+            clearPresence.Clicked += ClearPresence_Clicked;
 
-            _editPresenceView.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _enterPresenceLargeKey, _enterPresenceLargeKey_Input, _sendPresence, _clearPresence);
+            _editPresenceView.Add(editPresenceNameLabel, _editPresence_Name, editPresenceStateLabel, _editPresence_State, editPresenceLargeKey, _editPresence_ArtworkLarge, updatePresence, clearPresence);
 
-            // current presence window
+            #endregion
+            #region Current presence view
 
             _currentPresenceView = new FrameView("Current Presence")
             {
@@ -228,36 +236,38 @@ namespace RpcEditor
 
             _currentPresenceView.Add(_currentPresence_Name, _currentPresence_State, _currentPresence_ArtworkLarge, _currentPresence_ArtworkSmall, _currentPresence_Timestamps, artworkLargeLabel, artworkSmallLabel, presenceLabel, stateLabel, timestampLabel);
 
+            #endregion
+
             // add all views
-            _mainView.Add(_authView, _editPresenceView, _currentPresenceView, _currentStateView);
+            _mainView.Add(_connectionView, _editPresenceView, _currentPresenceView, _currentStateView);
 
             var top = Application.Top;
             top.Add(_copyright);
             top.Add(_mainView);
         }
 
-        public static void Main(string[] args)
+        public static void Main(string[] _0)
         {
-            var p = new Program();
+            _ = new Program();
             Application.Run();
         }
 
         private void ApplicationIdInput_Changed(object sender, EventArgs e)
         {
-            _appId_Errored = !ulong.TryParse(_applicationId_Input.Text.ToString(), out _appId);
-            if (_appId_Errored)
+            _conn_ApplicationId_Errored = !ulong.TryParse(_conn_ApplicationId.Text.ToString(), out _);
+            if (_conn_ApplicationId_Errored)
             {
-                _applicationId_Error.Text = "Invalid application ID";
+                _conn_ApplicationId_ErrorText.Text = "Invalid application ID";
             } else
             {
-                _applicationId_Error.Text = "";
+                _conn_ApplicationId_ErrorText.Text = "";
             }
 
         }
 
         private void Connect_Clicked()
         {
-            if (_appId_Errored) return;
+            if (_conn_ApplicationId_Errored) return;
 
             UpdateLabel(_state, "Connecting...");
 
@@ -272,7 +282,7 @@ namespace RpcEditor
                 _client = null;
             }
 
-            _client = new DiscordRpcClient(_appId.ToString());
+            _client = new DiscordRpcClient(_conn_ApplicationId.Text.ToString());
             _client.Initialize();
 
             _client.OnReady += Client_OnReady;
@@ -315,19 +325,6 @@ namespace RpcEditor
             Application.Refresh();
         }
 
-        private readonly View _editPresenceView;
-        private readonly Label _enterPresenceName = new Label("Name: ");
-        private readonly TextField _enterPresenceName_Input;
-
-        private readonly Label _enterPresenceState;
-        private readonly TextField _enterPresenceState_Input;
-
-        private readonly Label _enterPresenceLargeKey;
-        private readonly TextField _enterPresenceLargeKey_Input;
-
-        private readonly Button _sendPresence;
-        private readonly Button _clearPresence;
-
         private void Client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
             UpdateLabel(_state, $"Ready. Connected as {args.User}.");
@@ -337,15 +334,15 @@ namespace RpcEditor
         {
             var presence = new RichPresence
             {
-                Details = _enterPresenceName_Input.Text.ToString(),
-                State = _enterPresenceState_Input.Text.ToString()
+                Details = _editPresence_Name.Text.ToString(),
+                State = _editPresence_State.Text.ToString()
             };
 
-            if (!_enterPresenceLargeKey_Input.Text.IsEmpty)
+            if (!_editPresence_ArtworkLarge.Text.IsEmpty)
             {
                 presence.Assets = new Assets
                 {
-                    LargeImageKey = _enterPresenceLargeKey_Input.Text.ToString()
+                    LargeImageKey = _editPresence_ArtworkLarge.Text.ToString()
                 };
             };
 
