@@ -269,7 +269,7 @@ namespace RpcEditor
         {
             if (_conn_ApplicationId_Errored) return;
 
-            UpdateLabel(_state, "Connecting...");
+            _state.SetText("Connecting...");
 
             if (_client != null)
             {
@@ -295,39 +295,39 @@ namespace RpcEditor
 
         private void Client_OnClose(object sender, DiscordRPC.Message.CloseMessage args)
         {
-            UpdateLabel(_state, $"Connection closed: {args.Code} {args.Reason}");
+            _state.SetText($"Connection closed: {args.Code} {args.Reason}");
         }
 
         private void Client_OnError(object sender, DiscordRPC.Message.ErrorMessage args)
         {
-            UpdateLabel(_state, $"Error: {args.Code} {args.Message}");
+            _state.SetText($"Error: {args.Code} {args.Message}");
         }
 
         private void Client_OnConnectionEstablished(object sender, DiscordRPC.Message.ConnectionEstablishedMessage args)
         {
-            UpdateLabel(_state, "Established connection...");
+            _state.SetText("Established connection...");
         }
 
         private void Client_OnConnectionFailed(object sender, DiscordRPC.Message.ConnectionFailedMessage args)
         {
-            UpdateLabel(_state, $"Failed to connect to pipe {args.FailedPipe}. Is Discord open?");
+            _state.SetText($"Failed to connect to pipe {args.FailedPipe}. Is Discord open?");
         }
 
         private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
             // don't call updatelabel because we're updating many labels at once
-            _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "No presence set.";
-            _currentPresence_State.Text = _client.CurrentPresence?.State ?? "No state set.";
-            _currentPresence_ArtworkLarge.Text = _client.CurrentPresence?.Assets?.LargeImageKey ?? "No large artwork set.";
-            _currentPresence_ArtworkSmall.Text = _client.CurrentPresence?.Assets?.SmallImageKey ?? "No small artwork set.";
-            _currentPresence_Timestamps.Text = _client.CurrentPresence?.HasTimestamps() == true ? $"{_client.CurrentPresence.Timestamps.Start:F} - {_client.CurrentPresence.Timestamps.End:F}" : "No timestamps set.";
+            _currentPresence_Name.SetText(_client.CurrentPresence?.Details ?? "No presence set.", false);
+            _currentPresence_State.SetText(_client.CurrentPresence?.State ?? "No state set.", false);
+            _currentPresence_ArtworkLarge.SetText(_client.CurrentPresence?.Assets?.LargeImageKey ?? "No large artwork set.", false);
+            _currentPresence_ArtworkSmall.SetText(_client.CurrentPresence?.Assets?.SmallImageKey ?? "No small artwork set.", false);
+            _currentPresence_Timestamps.SetText(_client.CurrentPresence?.HasTimestamps() == true ? $"{_client.CurrentPresence.Timestamps.Start:F} - {_client.CurrentPresence.Timestamps.End:F}" : "No timestamps set.", false);
 
             Application.Refresh();
         }
 
         private void Client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
-            UpdateLabel(_state, $"Ready. Connected as {args.User}.");
+            _state.SetText($"Ready. Connected as {args.User}.");
         }
 
         private void UpdatePresence_Clicked()
@@ -352,13 +352,6 @@ namespace RpcEditor
         private void ClearPresence_Clicked()
         {
             _client.ClearPresence();
-        }
-
-        private void UpdateLabel(Label label, string newText)
-        {
-            label.Clear();
-            label.Text = newText;
-            Application.Refresh();
         }
     }
 }
