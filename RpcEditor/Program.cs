@@ -9,6 +9,8 @@ namespace RpcEditor
     {
         private DiscordRpcClient _client;
 
+        private readonly Label _copyright = new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor");
+
         private readonly Window _window;
 
         private readonly Label _applicationId;
@@ -91,7 +93,7 @@ namespace RpcEditor
                 Width = 30
             };
 
-            _enterPresenceState = new Label("State:")
+            _enterPresenceState = new Label("State: ")
             {
                 X = 0,
                 Y = Pos.Bottom(_enterPresenceName)
@@ -104,28 +106,42 @@ namespace RpcEditor
                 Width = 30
             };
 
-            _sendPresence = new Button("Update")
+            _enterPresenceLargeKey = new Label("Artwork large key: ")
             {
                 X = 0,
                 Y = Pos.Bottom(_enterPresenceState)
             };
 
+            _enterPresenceLargeKey_Input = new TextField("")
+            {
+                X = Pos.Right(_enterPresenceLargeKey),
+                Y = Pos.Bottom(_enterPresenceState),
+                Width = 30
+            };
+
+            _sendPresence = new Button("Update")
+            {
+                X = 0,
+                Y = Pos.Bottom(_enterPresenceLargeKey)
+            };
+
             _clearPresence = new Button("Clear")
             {
                 X = Pos.Right(_sendPresence),
-                Y = Pos.Bottom(_enterPresenceState)
+                Y = Pos.Bottom(_enterPresenceLargeKey)
             };
 
             _sendPresence.Clicked += UpdatePresence_Clicked;
 
             _clearPresence.Clicked += ClearPresence_Clicked;
 
-            _editWindow.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _sendPresence, _clearPresence);
+            _editWindow.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _enterPresenceLargeKey, _enterPresenceLargeKey_Input, _sendPresence, _clearPresence);
         }
 
         public void Run()
         {
             var top = Application.Top;
+            top.Add(_copyright);
             top.Add(_window);
             
             _window.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect,
@@ -165,11 +181,14 @@ namespace RpcEditor
         }
 
         private Window _editWindow;
-        private Label _enterPresenceName = new Label("Name:");
+        private Label _enterPresenceName = new Label("Name: ");
         private TextField _enterPresenceName_Input;
 
         private Label _enterPresenceState;
         private TextField _enterPresenceState_Input;
+
+        private Label _enterPresenceLargeKey;
+        private TextField _enterPresenceLargeKey_Input;
 
         private Button _sendPresence;
         private Button _clearPresence;
@@ -181,11 +200,21 @@ namespace RpcEditor
 
         private void UpdatePresence_Clicked()
         {
-            _client.SetPresence(new RichPresence
+            var presence = new RichPresence
             {
                 Details = _enterPresenceName_Input.Text.ToString(),
                 State = _enterPresenceState_Input.Text.ToString()
-            });
+            };
+
+            if (!_enterPresenceLargeKey_Input.Text.IsEmpty)
+            {
+                presence.Assets = new Assets
+                {
+                    LargeImageKey = _enterPresenceLargeKey_Input.Text.ToString()
+                };
+            };
+
+            _client.SetPresence(presence);
         }
 
         private void ClearPresence_Clicked()
