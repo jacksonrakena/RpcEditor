@@ -23,6 +23,10 @@ namespace RpcEditor
 
         private readonly Label _state;
         private readonly Label _currentPresence_Name;
+        private readonly Label _currentPresence_State;
+        private readonly Label _currentPresence_ArtworkLarge;
+        private readonly Label _currentPresence_ArtworkSmall;
+        private readonly Label _currentPresence_Timestamps;
 
         private readonly Button _connect;
 
@@ -179,9 +183,50 @@ namespace RpcEditor
                 Height = Dim.Fill()
             };
 
-            _currentPresence_Name = new Label("No presence set.");
+            var presenceLabel = new Label("Presence: ");
+            var stateLabel = new Label("State: ")
+            {
+                Y = Pos.Bottom(presenceLabel)
+            };
+            var artworkLargeLabel = new Label("Large artwork ID: ")
+            {
+                Y = Pos.Bottom(stateLabel)
+            };
+            var artworkSmallLabel = new Label("Small artwork ID: ")
+            {
+                Y = Pos.Bottom(artworkLargeLabel)
+            };
+            var timestampLabel = new Label("Timestamps: ")
+            {
+                Y = Pos.Bottom(artworkSmallLabel)
+            };
 
-            _currentPresenceView.Add(_currentPresence_Name);
+            _currentPresence_Name = new Label("No presence set.")
+            {
+                X = Pos.Right(presenceLabel)
+            };
+            _currentPresence_State = new Label("No state set.") 
+            { 
+                Y = Pos.Bottom(_currentPresence_Name), 
+                X = Pos.Right(stateLabel)
+            };
+            _currentPresence_ArtworkLarge = new Label("No large artwork set.") 
+            { 
+                Y = Pos.Bottom(_currentPresence_State),
+                X = Pos.Right(artworkLargeLabel)
+            };
+            _currentPresence_ArtworkSmall = new Label("No small artwork set.")
+            {
+                Y = Pos.Bottom(_currentPresence_ArtworkLarge),
+                X = Pos.Right(artworkSmallLabel)
+            };
+            _currentPresence_Timestamps = new Label("No timestamps set.")
+            { 
+                Y = Pos.Bottom(_currentPresence_ArtworkSmall),
+                X = Pos.Right(timestampLabel)
+            };
+
+            _currentPresenceView.Add(_currentPresence_Name, _currentPresence_State, _currentPresence_ArtworkLarge, _currentPresence_ArtworkSmall, _currentPresence_Timestamps, artworkLargeLabel, artworkSmallLabel, presenceLabel, stateLabel, timestampLabel);
 
             // add all views
             _mainView.Add(_authView, _editPresenceView, _currentPresenceView, _currentStateView);
@@ -260,7 +305,14 @@ namespace RpcEditor
 
         private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
-            UpdateLabel(_currentPresence_Name, _client.CurrentPresence?.Details ?? "No presence set.");
+            // don't call updatelabel because we're updating many labels at once
+            _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "No presence set.";
+            _currentPresence_State.Text = _client.CurrentPresence?.State ?? "No state set.";
+            _currentPresence_ArtworkLarge.Text = _client.CurrentPresence?.Assets?.LargeImageKey ?? "No large artwork set.";
+            _currentPresence_ArtworkSmall.Text = _client.CurrentPresence?.Assets?.SmallImageKey ?? "No small artwork set.";
+            _currentPresence_Timestamps.Text = _client.CurrentPresence?.HasTimestamps() == true ? $"{_client.CurrentPresence.Timestamps.Start:F} - {_client.CurrentPresence.Timestamps.End:F}" : "No timestamps set.";
+
+            Application.Refresh();
         }
 
         private readonly View _editPresenceView;
