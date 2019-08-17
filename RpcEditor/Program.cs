@@ -9,11 +9,12 @@ namespace RpcEditor
     {
         private DiscordRpcClient _client;
 
-        private readonly Label _copyright = new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor");
+        private readonly Label _copyright;
 
-        private readonly Window _window;
-        private readonly View _viewWindow;
-        private readonly View _stateWindow;
+        private readonly View _mainView;
+        private readonly View _currentPresenceView;
+        private readonly View _currentStateView;
+        private readonly View _authView;
 
         private readonly Label _applicationId;
         private readonly TextField _applicationId_Input;
@@ -30,6 +31,31 @@ namespace RpcEditor
         public Program()
         {
             Application.Init();
+
+            // copyright
+            _copyright = new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor")
+            {
+                TextColor = Terminal.Gui.Attribute.Make(Color.BrighCyan, Color.Black)
+            };
+
+            // main view
+
+            _mainView = new FrameView("Discord Rich Presence Editor")
+            {
+                X = 0,
+                Y = 1, // Leave one row for the copyright label
+
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };
+
+            // authentication window
+
+            _authView = new FrameView("Connection")
+            {
+                Height = 5
+            };
+
             _applicationId = new Label("Discord application ID: ")
             {
                 X = 0,
@@ -40,8 +66,10 @@ namespace RpcEditor
             {
                 X = Pos.Right(_applicationId),
                 Y = Pos.Top(_applicationId),
-                Width = 40,
+                Width = 40
             };
+
+            _applicationId_Input.Changed += ApplicationIdInput_Changed;
 
             _applicationId_Error = new Label("Invalid application ID")
             {
@@ -49,17 +77,6 @@ namespace RpcEditor
                 Y = Pos.Top(_applicationId_Input),
                 Width = 25,
                 TextColor = Terminal.Gui.Attribute.Make(Color.Red, Color.Black)
-            };
-
-            _applicationId_Input.Changed += ApplicationIdInput_Changed;
-
-            _window = new Window("Discord Rich Presence Editor")
-            {
-                X = 0,
-                Y = 1, // Leave one row for the toplevel menu
-
-                Width = Dim.Fill(),
-                Height = Dim.Fill()
             };
 
             _connect = new Button("Connect")
@@ -71,40 +88,36 @@ namespace RpcEditor
             };
             _connect.Clicked += Connect_Clicked;
 
+            _authView.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect);
+
+            // state window
+
+            _currentStateView = new FrameView("State")
+            {
+                X = 0,
+                Y = Pos.Bottom(_authView),
+                Height = 4
+            };
+
             _state = new Label("Not connected")
             {
-                X = 3
+                X = 2
             };
 
-            _currentPresence_Name = new Label("No presence set.")
-            {
-                X = 0,
-                Y = 0
-            };
+            _currentStateView.Add(_state);
 
-            _stateWindow = new FrameView("State")
-            {
-                X = 0,
-                Y = Pos.Bottom(_connect) + 4,
-                Height = 10
-            };
-            _stateWindow.Add(_state);
+            // edit presence window
 
-            _editWindow = new FrameView("Edit Presence")
+            _editPresenceView = new FrameView("Edit Presence")
             {
                 X = 0,
-                Y = Pos.Bottom(_stateWindow),
+                Y = Pos.Bottom(_currentStateView),
                 Width = 50,
                 Height = Dim.Fill()
             };
 
-            _viewWindow = new FrameView("Current Presence")
-            {
-                X = Pos.Right(_editWindow),
-                Y = Pos.Bottom(_stateWindow),
-                Width = Dim.Fill(),
-                Height = Dim.Fill()
-            };
+            _enterPresenceName = new Label("Name: ");
+
             _enterPresenceName_Input = new TextField("")
             {
                 X = Pos.Right(_enterPresenceName),
@@ -154,23 +167,35 @@ namespace RpcEditor
 
             _clearPresence.Clicked += ClearPresence_Clicked;
 
-            _editWindow.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _enterPresenceLargeKey, _enterPresenceLargeKey_Input, _sendPresence, _clearPresence);
+            _editPresenceView.Add(_enterPresenceName, _enterPresenceName_Input, _enterPresenceState, _enterPresenceState_Input, _enterPresenceLargeKey, _enterPresenceLargeKey_Input, _sendPresence, _clearPresence);
 
-            _viewWindow.Add(_currentPresence_Name);
-        }
+            // current presence window
 
-        public void Run()
-        {
+            _currentPresenceView = new FrameView("Current Presence")
+            {
+                X = Pos.Right(_editPresenceView),
+                Y = Pos.Bottom(_currentStateView),
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            };
+
+            _currentPresence_Name = new Label("No presence set.");
+
+            _currentPresenceView.Add(_currentPresence_Name);
+
+            // add all views
+            _mainView.Add(_authView, _editPresenceView, _currentPresenceView, _currentStateView);
+
             var top = Application.Top;
             top.Add(_copyright);
-            top.Add(_window);
-            
-            _window.Add(_applicationId, _applicationId_Input, _applicationId_Error, _connect, _editWindow, _viewWindow, _stateWindow);
-
-            Application.Run();
+            top.Add(_mainView);
         }
 
-        public static void Main(string[] args) => new Program().Run();
+        public static void Main(string[] args)
+        {
+            var p = new Program();
+            Application.Run();
+        }
 
         private void ApplicationIdInput_Changed(object sender, EventArgs e)
         {
@@ -191,32 +216,32 @@ namespace RpcEditor
             _client = new DiscordRpcClient(_appId.ToString());
             _client.Initialize();
 
-            _client.OnReady += _client_OnReady;
-            _client.OnPresenceUpdate += _client_OnPresenceUpdate;
+            _client.OnReady += Client_OnReady;
+            _client.OnPresenceUpdate += Client_OnPresenceUpdate;
         }
 
-        private void _client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
+        private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
             _currentPresence_Name.Text = _client.CurrentPresence?.Details ?? "No presence set.";
             Application.Refresh();
         }
 
-        private View _editWindow;
-        private Label _enterPresenceName = new Label("Name: ");
-        private TextField _enterPresenceName_Input;
+        private readonly View _editPresenceView;
+        private readonly Label _enterPresenceName = new Label("Name: ");
+        private readonly TextField _enterPresenceName_Input;
 
-        private Label _enterPresenceState;
-        private TextField _enterPresenceState_Input;
+        private readonly Label _enterPresenceState;
+        private readonly TextField _enterPresenceState_Input;
 
-        private Label _enterPresenceLargeKey;
-        private TextField _enterPresenceLargeKey_Input;
+        private readonly Label _enterPresenceLargeKey;
+        private readonly TextField _enterPresenceLargeKey_Input;
 
-        private Button _sendPresence;
-        private Button _clearPresence;
+        private readonly Button _sendPresence;
+        private readonly Button _clearPresence;
 
-        private void _client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
+        private void Client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
-            _state.Text = $"Ready. Connected as {args.User} with RPC version {args.Version}.";
+            _state.Text = $"Ready. Connected as {args.User}.";
             Application.Refresh();
         }
 
