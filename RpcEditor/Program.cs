@@ -1,4 +1,5 @@
 ﻿using DiscordRPC;
+using RpcEditor.Views;
 using System;
 using Terminal.Gui;
 
@@ -20,9 +21,7 @@ namespace RpcEditor
         private readonly Label _copyright;
 
         // Connection view
-        private readonly TextField _conn_ApplicationId;
-        private readonly Label _conn_ApplicationId_ErrorText;
-        private bool _conn_ApplicationId_Errored;
+        private readonly InputSetWithValidation _conn_ApplicationId;
         private readonly Button _conn_Connect;
 
         // State view
@@ -70,34 +69,18 @@ namespace RpcEditor
                 Height = 5
             };
 
-            var idLabel = new Label("Discord application ID: ");
-
-            _conn_ApplicationId = new TextField("")
-            {
-                X = Pos.Right(idLabel),
-                Width = 40
-            };
-
-            _conn_ApplicationId.Changed += ApplicationIdInput_Changed;
-
-            _conn_ApplicationId_ErrorText = new Label("Invalid application ID")
-            {
-                X = Pos.Right(_conn_ApplicationId),
-                Y = Pos.Top(_conn_ApplicationId),
-                Width = 25,
-                TextColor = Terminal.Gui.Attribute.Make(Color.Red, Color.Black)
-            };
+            _conn_ApplicationId = new InputSetWithValidation("Discord application ID: ", "Invalid application ID", "Valid", Utilities.IsDiscordId, 18);
 
             _conn_Connect = new Button("Connect")
             {
                 X = 0,
-                Y = Pos.Bottom(idLabel),
+                Y = Pos.Bottom(_conn_ApplicationId),
 
                 Width = 10
             };
             _conn_Connect.Clicked += Connect_Clicked;
 
-            _connectionView.Add(idLabel, _conn_ApplicationId, _conn_ApplicationId_ErrorText, _conn_Connect);
+            _connectionView.Add(_conn_ApplicationId, _conn_Connect);
 
             #endregion
             #region State view
@@ -252,23 +235,9 @@ namespace RpcEditor
             Application.Run();
         }
 
-        private void ApplicationIdInput_Changed(object sender, EventArgs e)
-        {
-            _conn_ApplicationId_Errored = !ulong.TryParse(_conn_ApplicationId.Text.ToString(), out _);
-            if (_conn_ApplicationId_Errored)
-            {
-                _conn_ApplicationId_ErrorText.Text = "Invalid application ID";
-            } else
-            {
-                _conn_ApplicationId_ErrorText.Text = "";
-            }
-
-        }
-
         private void Connect_Clicked()
         {
-            if (_conn_ApplicationId_Errored) return;
-
+            if (!_conn_ApplicationId.IsValid()) return;
             _state.SetText("Connecting...");
 
             if (_client != null)
@@ -282,7 +251,7 @@ namespace RpcEditor
                 _client = null;
             }
 
-            _client = new DiscordRpcClient(_conn_ApplicationId.Text.ToString());
+            _client = new DiscordRpcClient(_conn_ApplicationId.Value.Text.ToString());
             _client.Initialize();
 
             _client.OnReady += Client_OnReady;
