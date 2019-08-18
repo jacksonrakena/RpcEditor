@@ -11,21 +11,15 @@ namespace RpcEditor
         private DiscordRpcClient _client;
 
         // Views
-        private readonly View _mainView;
         private readonly View _currentPresenceView;
         private readonly View _currentStateView;
         private readonly View _connectionView;
         private readonly View _editPresenceView;
 
-        // Main view components
-        private readonly Label _copyright;
 
         // Connection view
         private readonly InputSetWithValidation _conn_ApplicationId;
         private readonly Button _conn_Connect;
-
-        // State view
-        private readonly Label _state;
 
         // Current presence view
         private readonly Label _currentPresence_Name;
@@ -42,25 +36,6 @@ namespace RpcEditor
         public Program()
         {
             Application.Init();
-
-            // copyright
-            _copyright = new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor")
-            {
-                TextColor = Terminal.Gui.Attribute.Make(Color.BrighCyan, Color.Black)
-            };
-
-            #region Main view
-
-            _mainView = new FrameView("Discord Rich Presence Editor")
-            {
-                X = 0,
-                Y = 1, // Leave one row for the copyright label
-
-                Width = Dim.Fill(),
-                Height = Dim.Fill()
-            };
-
-            #endregion
 
             #region Connection view
 
@@ -90,25 +65,13 @@ namespace RpcEditor
                 X = 0,
                 Y = Pos.Bottom(_connectionView),
                 Height = 4
-            };
-
-            _state = new Label("Not connected")
+            }.WithSubviews(new Label("Not connected")
             {
                 X = 2
-            };
-
-            _currentStateView.Add(_state);
+            });
 
             #endregion
             #region Edit presence view
-
-            _editPresenceView = new FrameView("Edit Presence")
-            {
-                X = 0,
-                Y = Pos.Bottom(_currentStateView),
-                Width = 50,
-                Height = Dim.Fill()
-            };
 
             var editPresenceNameLabel = new Label("Name: ");
 
@@ -157,22 +120,29 @@ namespace RpcEditor
                 Y = Pos.Bottom(editPresenceLargeKey)
             };
 
+            var exit = new Button("Exit")
+            {
+                X = Pos.Right(clearPresence),
+                Y = Pos.Bottom(editPresenceLargeKey)
+            };
+
             updatePresence.Clicked += UpdatePresence_Clicked;
 
-            clearPresence.Clicked += ClearPresence_Clicked;
+            clearPresence.Clicked += () => _client.ClearPresence();
 
-            _editPresenceView.Add(editPresenceNameLabel, _editPresence_Name, editPresenceStateLabel, _editPresence_State, editPresenceLargeKey, _editPresence_ArtworkLarge, updatePresence, clearPresence);
+            exit.Clicked += () => Environment.Exit(0);
+
+            _editPresenceView = new FrameView("Edit Presence")
+            {
+                X = 0,
+                Y = Pos.Bottom(_currentStateView),
+                Width = 50,
+                Height = Dim.Fill()
+            }.WithSubviews(editPresenceNameLabel, _editPresence_Name, editPresenceStateLabel, _editPresence_State,
+                _editPresence_State, editPresenceLargeKey, _editPresence_ArtworkLarge, updatePresence, clearPresence, exit);
 
             #endregion
             #region Current presence view
-
-            _currentPresenceView = new FrameView("Current Presence")
-            {
-                X = Pos.Right(_editPresenceView),
-                Y = Pos.Bottom(_currentStateView),
-                Width = Dim.Fill(),
-                Height = Dim.Fill()
-            };
 
             var presenceLabel = new Label("Presence: ");
             var stateLabel = new Label("State: ")
@@ -216,17 +186,30 @@ namespace RpcEditor
                 Y = Pos.Bottom(_currentPresence_ArtworkSmall),
                 X = Pos.Right(timestampLabel)
             };
-
-            _currentPresenceView.Add(_currentPresence_Name, _currentPresence_State, _currentPresence_ArtworkLarge, _currentPresence_ArtworkSmall, _currentPresence_Timestamps, artworkLargeLabel, artworkSmallLabel, presenceLabel, stateLabel, timestampLabel);
-
+            _currentPresenceView = new FrameView("Current Presence")
+            {
+                X = Pos.Right(_editPresenceView),
+                Y = Pos.Bottom(_currentStateView),
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            }.WithSubviews(_currentPresence_Name, _currentPresence_State, _currentPresence_ArtworkLarge, _currentPresence_ArtworkSmall, _currentPresence_Timestamps, artworkLargeLabel, artworkSmallLabel, presenceLabel, stateLabel, timestampLabel);
             #endregion
 
             // add all views
-            _mainView.Add(_connectionView, _editPresenceView, _currentPresenceView, _currentStateView);
 
             var top = Application.Top;
-            top.Add(_copyright);
-            top.Add(_mainView);
+
+            top.Add(new Label("Copyright (c) 2019 Abyssal - https://github.com/abyssal/RpcEditor")
+            {
+                TextColor = Terminal.Gui.Attribute.Make(Color.BrighCyan, Color.Black)
+            }, new FrameView("Discord Rich Presence Editor")
+            {
+                X = 0,
+                Y = 1, // Leave one row for the copyright label
+
+                Width = Dim.Fill(),
+                Height = Dim.Fill()
+            }.WithSubviews(_connectionView, _editPresenceView, _currentPresenceView, _currentStateView));
         }
 
         public static void Main(string[] _0)
@@ -235,10 +218,15 @@ namespace RpcEditor
             Application.Run();
         }
 
+        private void SetStateText(string stateText)
+        {
+            ((Label) _currentStateView.Subviews[0].Subviews[0]).SetText(stateText);
+        }
+
         private void Connect_Clicked()
         {
             if (!_conn_ApplicationId.IsValid()) return;
-            _state.SetText("Connecting...");
+            SetStateText("Connecting...");
 
             if (_client != null)
             {
@@ -264,27 +252,27 @@ namespace RpcEditor
 
         private void Client_OnClose(object sender, DiscordRPC.Message.CloseMessage args)
         {
-            _state.SetText($"Connection closed: {args.Code} {args.Reason}");
+            SetStateText($"Connection closed: {args.Code} {args.Reason}");
         }
 
         private void Client_OnError(object sender, DiscordRPC.Message.ErrorMessage args)
         {
-            _state.SetText($"Error: {args.Code} {args.Message}");
+            SetStateText($"Error: {args.Code} {args.Message}");
         }
 
         private void Client_OnConnectionEstablished(object sender, DiscordRPC.Message.ConnectionEstablishedMessage args)
         {
-            _state.SetText("Established connection...");
+            SetStateText("Established connection...");
         }
 
         private void Client_OnConnectionFailed(object sender, DiscordRPC.Message.ConnectionFailedMessage args)
         {
-            _state.SetText($"Failed to connect to pipe {args.FailedPipe}. Is Discord open?");
+            SetStateText($"Failed to connect to pipe {args.FailedPipe}. Is Discord open?");
         }
 
         private void Client_OnPresenceUpdate(object sender, DiscordRPC.Message.PresenceMessage args)
         {
-            // don't call updatelabel because we're updating many labels at once
+            // call settext with false because we're setting many at once
             _currentPresence_Name.SetText(_client.CurrentPresence?.Details ?? "No presence set.", false);
             _currentPresence_State.SetText(_client.CurrentPresence?.State ?? "No state set.", false);
             _currentPresence_ArtworkLarge.SetText(_client.CurrentPresence?.Assets?.LargeImageKey ?? "No large artwork set.", false);
@@ -296,7 +284,7 @@ namespace RpcEditor
 
         private void Client_OnReady(object sender, DiscordRPC.Message.ReadyMessage args)
         {
-            _state.SetText($"Ready. Connected as {args.User}.");
+            SetStateText($"Ready. Connected as {args.User}.");
         }
 
         private void UpdatePresence_Clicked()
@@ -316,11 +304,6 @@ namespace RpcEditor
             };
 
             _client.SetPresence(presence);
-        }
-
-        private void ClearPresence_Clicked()
-        {
-            _client.ClearPresence();
         }
     }
 }
