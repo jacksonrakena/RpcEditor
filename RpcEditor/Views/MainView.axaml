@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:RpcEditor.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="RpcEditor.Views.MainView"
+             x:DataType="vm:MainViewModel">
+  <Design.DataContext>
+    <!-- This only sets the DataContext for the previewer in an IDE,
+         to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+    <vm:MainViewModel />
+  </Design.DataContext>
+    
+    <StackPanel>
+        <TextBlock>Copyright © 2024 Jackson - https://github.com/jacksonrakena/RpcEditor</TextBlock>
+        <StackPanel Spacing="5" Margin="50">
+            <TextBlock Text="{Binding State}" />
+            <TextBox Text="{Binding AppId, Mode=TwoWay}"></TextBox>
+            <Button Click="Button_OnClick">Connect</Button>
+            <Border CornerRadius="10" ClipToBounds="True">
+                <StackPanel>
+                    <TextBlock Text="{Binding PName,StringFormat='Name: {0}'}" />
+                    <TextBlock Text="{Binding PState,StringFormat='State: {0}'}" />
+                    <TextBlock Text="{Binding PArtworkLarge,StringFormat='Artwork Large: {0}'}" />
+                    <TextBlock Text="{Binding PArtworkSmall,StringFormat='Artwork Small: {0}'}" />
+                    <TextBlock Text="{Binding PTimestamps,StringFormat='Timestamps: {0}'}" />
+                </StackPanel>
+            </Border>    
+            <Border CornerRadius="10" ClipToBounds="True">
+                <StackPanel>
+                    <StackPanel><Label>Name</Label><TextBox Text="{Binding IName}" /></StackPanel>
+                    <StackPanel><Label>State</Label><TextBox Text="{Binding IState}" /></StackPanel>
+                    <StackPanel><Label>Large artwork</Label><TextBox Text="{Binding IArtworkLarge}" /></StackPanel>
+                    <StackPanel><Label Content="Small artwork:"/><TextBox Text="{Binding IArtworkSmall}" /></StackPanel>
+                    <Label Content="Start:"/>
+                    <TimePicker ClockIdentifier="24HourClock"              
+                                MinuteIncrement="20" SelectedTime="{Binding ITsStart,Mode=TwoWay}"/>
+                    <Label Content="End:"/>
+                    <TimePicker ClockIdentifier="24HourClock"              
+                                MinuteIncrement="20" SelectedTime="{Binding ITsEnd,Mode=TwoWay}"/>
+                    <Button Click="Update">Update</Button>
+                </StackPanel>
+            </Border>    
+            <TextBlock Text="{Binding Greeting}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        </StackPanel>
+    </StackPanel>
+</UserControl>
