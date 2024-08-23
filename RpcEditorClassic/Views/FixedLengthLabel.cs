@@ -4,7 +4,7 @@ using System.Text;
 using NStack;
 using Terminal.Gui;
 
-namespace RpcEditor.Views
+namespace RpcEditorClassic.Views
 {
     public class FixedLengthLabel : Label
     {

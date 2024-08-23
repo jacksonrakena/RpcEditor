@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Terminal.Gui;
 
-namespace RpcEditor.Views
+namespace RpcEditorClassic.Views
 {
     public class InputSetWithValidation : InputSet
     {

@@ -1,9 +1,9 @@
 ﻿using DiscordRPC;
-using RpcEditor.Views;
 using System;
+using RpcEditorClassic.Views;
 using Terminal.Gui;
 
-namespace RpcEditor
+namespace RpcEditorClassic
 {
     public class Program
     {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Terminal.Gui;
 
-namespace RpcEditor
+namespace RpcEditorClassic
 {
     public static class LabelExtensions
     {
